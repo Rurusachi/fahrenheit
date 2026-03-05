@@ -38,6 +38,8 @@ public unsafe struct SphereGridLink {
     [FieldOffset(0x4)]  public short anchor_idx;
     [FieldOffset(0xC)]  public byte  activated_by;
     [FieldOffset(0xD)]  public byte  point_count;
+    [FieldOffset(0xE)]  public byte  __0xE;
+    
     [FieldOffset(0x10)] public SphereGridLinkPoint* points;
 
     public readonly SphereGridNode node_a => Globals.SphereGrid.lpamng->nodes[node_a_idx];
@@ -104,6 +106,8 @@ public unsafe struct SphereGridNode {
     [FieldOffset(0x22)] public  SphereGridNodeProperties properties;
     [FieldOffset(0x24)] public  byte                     move_cost; // Only nonzero when moving
 
+    [FieldOffset(0x26)] public  ushort                   __0x26;
+
     public NodeType node_type {
         get => _node_type == -1 ? NodeType.NULL : (NodeType)_node_type;
         set => _node_type = (short)value;
@@ -158,20 +162,42 @@ public unsafe struct SphereGridNode {
 
 [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 0x30)]
 public unsafe struct SphereGridNodeTypeInfo {
-    [FieldOffset(0xC)] public short width;
-    [FieldOffset(0xE)] public short height;
+    [InlineArray(7)]
+    public struct Vec2s16Array {
+        private Vec2s16 _data;
+    }
 
+    [FieldOffset(0x0C)] public short        width;
+    [FieldOffset(0x0E)] public short        height;
+
+    [FieldOffset(0x10)] public float        __0x10;
+    [FieldOffset(0x14)] public Vec2s16Array pos; // activation indicator offset per character
     public Vector2 size => new Vector2(width, height) * new Vector2(Globals.SphereGrid.lpamng->current_zoom);
 }
 
-[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 0x50)]
+[StructLayout(LayoutKind.Sequential)]
 public unsafe struct SphereGridChrInfo {
-    [FieldOffset(0x0)]  public Vector4 pos;
-    [FieldOffset(0x10)] public Vector4 label_pos;
-    [FieldOffset(0x2C)] public byte*   chr_name;
-    [FieldOffset(0x30)] public short   name_width; // min 32
-    [FieldOffset(0x3C)] public float   pos_circle_radius;
-    [FieldOffset(0x44)] public short   current_node_idx;
+    public  Vector4 pos;
+    public  Vector4 label_pos;
+    public  uint    a;
+    public  uint    b;
+    public  uint    c;
+    public  byte*   chr_name;
+    public  short   name_width; // min 32
+    public  short   __0x32;
+    private ushort  __0x34_pad;
+    private ushort  __0x36_pad;
+    public  short   __0x38;
+    private ushort  __0x3A_pad;
+    public  float   pos_circle_radius;
+    public  uint    __0x40;
+    public  short   current_node_idx;
+    public  short   __0x46;
+    public  short   __0x48;
+    public  short   __0x4A;
+    public  short   __0x4C;
+    public  byte    __0x4E;
+    private byte    __0x4F_pad;
 }
 
 public enum NodeType : byte {
