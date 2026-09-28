@@ -50,8 +50,6 @@ internal static class FhEnvironment {
         ExceptionHandling.SetUnhandledExceptionHandler(FhExceptionHandler.eh_unhandled);
         // ExceptionHandling.SetFatalErrorHandler(FhExceptionHandler.eh_fatal); // Uncomment when added in .NET 11/12.
 
-        AppDomain.CurrentDomain.FirstChanceException += FhExceptionHandler.eh_first_chance;
-
         Finder            = new();
         BaseAddr          = NativeLibrary.GetMainProgramHandle();
         LoadOrder         = _init_load_order();
