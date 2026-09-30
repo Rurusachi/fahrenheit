@@ -22,6 +22,31 @@ public sealed partial class FhLocalization {
     private readonly static string[]                       _s_locale_ids;
     private readonly static Dictionary<string, LocaleData> _s_locales = [];
 
+    /* [fkelava 30/09/26 19:47]
+     * One of the rare differences between previous and later remaster
+     * versions is that Simplified Chinese (zh-Hans) support was later added.
+     *
+     * Steam only supports Traditional (zh-Hant) though.
+     */
+
+    /// <summary>
+    ///     Returns the ISO 639 language ID for the current game language.
+    /// </summary>
+    private string get_default_lang_id() {
+        return FhGlobal.lang_id switch {
+            FhLangId.English  => "en-US",
+            FhLangId.French   => "fr-FR",
+            FhLangId.Spanish  => "es-ES",
+            FhLangId.German   => "de-DE",
+            FhLangId.Italian  => "it-IT",
+            FhLangId.Japanese or
+            FhLangId.Debug    => "ja-JP",
+            FhLangId.Chinese  => "zh-Hant",
+            FhLangId.Korean   => "ko-KR",
+            _                 => "en-US"
+        };
+    }
+
     /// <summary>
     ///     Loads localization data for all mods.
     /// </summary>
@@ -99,11 +124,16 @@ public sealed partial class FhLocalization {
     ///     for the locale with ID <paramref name="lang_id"/>,
     ///     falling back to <paramref name="id"/> if unavailable.
     /// </summary>
-    public string localize(string id, FhModule? caller = null, string lang_id = "en-US") {
+    public string localize(
+        string    id,
+        FhModule? caller  = null,
+        string?   lang_id = null
+    ) {
         string composite_id = (caller == null)
             ? id
             : $"{caller.ModuleType}.{id}";
 
+        lang_id ??= get_default_lang_id();
         return _s_locales.TryGetValue(lang_id, out LocaleData? locale) && locale.TryGetValue(composite_id, out string? localized_string)
             ? localized_string
             : id;
