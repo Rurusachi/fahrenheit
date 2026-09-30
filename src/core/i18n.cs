@@ -80,8 +80,8 @@ public sealed partial class FhLocalization {
         foreach (FileInfo lang_file in module_dir.EnumerateFiles("*.json", SearchOption.TopDirectoryOnly)) {
             string lang_id = Path.GetFileNameWithoutExtension(lang_file.FullName);
 
-            string mod_name    = mod.Manifest.Name; // We use the 'pretty' name to make errors more legible.
-            string module_name = module_dir.Name;   // ex. Fahrenheit.Runtime.FhSaveUiModule
+            string mod_name    = mod.Manifest.Id;
+            string module_name = module_dir.Name; // ex. Fahrenheit.Runtime.FhSaveUiModule
 
             if (!_s_locales.TryGetValue(lang_id, out LocaleData? locale)) {
                 FhInternal.Log.Warning($"Mod '{mod_name}', module '{module_name}': ignoring unknown locale '{lang_id}'.");
@@ -100,7 +100,7 @@ public sealed partial class FhLocalization {
                     ?? throw new Exception("Invalid or uninterpretable language file.");
             }
             catch {
-                FhInternal.Log.Error($"While parsing locale {lang_id} for mod {mod_name}:");
+                FhInternal.Log.Error($"While parsing locale {lang_id} from mod {mod_name} for module {module_name}:");
                 throw;
             }
 
@@ -109,13 +109,13 @@ public sealed partial class FhLocalization {
                 string key      = $"{module_name}.{user_key}";
 
                 if (locale.ContainsKey(key)) {
-                    FhInternal.Log.Warning($"Key '{user_key}' in locale '{lang_id}' of module '{module_name}' superseded by '{mod_name}'");
+                    FhInternal.Log.Warning($"Key '{user_key}' in locale '{lang_id}' of module '{module_name}' superseded by '{mod_name}'.");
                 }
 
                 locale[key] = user_string.Value;
             }
 
-            FhInternal.Log.Info($"Loaded locale {lang_id} for mod {mod_name}.");
+            FhInternal.Log.Info($"Loaded locale {lang_id} from mod {mod_name} for module {module_name}.");
         }
     }
 
