@@ -746,9 +746,9 @@ public static partial class FhCall {
         => new( new FhMethodLocation("FFX.exe", 0x2DB1C0) );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate void d_FUN_2EFFF0();
-    internal static FhMethodHandle<d_FUN_2EFFF0> FUN_2EFFF0
-        => new( new FhMethodLocation("FFX.exe", 0x2EFFF0) );
+    internal delegate void d_FUN_2EFEB0();
+    internal static FhMethodHandle<d_FUN_2EFEB0> FUN_2EFEB0
+        => new( new FhMethodLocation("FFX.exe", 0x2EFEB0) );
 
     [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
     public delegate void d_FfxFmod_soundInit(nint ptr_this);
@@ -767,7 +767,7 @@ public static partial class FhCall {
 
     [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
     public delegate uint d_FUN_0070aec0(nint ptr_this, uint voice_id, uint arg3);
-    public static FhMethodHandle<d_FUN_0070aec0> FUN_0070aec0
+    public static FhMethodHandle<d_FUN_0070aec0> _FUN_0070aec0
         => new( new FhMethodLocation("FFX.exe", 0x30AEC0) );
 
     [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
@@ -1209,7 +1209,7 @@ public static partial class FhCall {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void d_AtelSetEventJump2(int room, int entrance, int do_fade);
     public static FhMethodHandle<d_AtelSetEventJump2> AtelSetEventJump2
-        => new( new FhMethodLocation("FFX.exe", 0x46FED0) );
+        => new( new FhMethodLocation("FFX.exe", 0x46FF40) );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void d_AtelEventSetUp(int event_id);
