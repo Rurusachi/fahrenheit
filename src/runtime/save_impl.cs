@@ -36,11 +36,11 @@ public unsafe sealed class FhSaveExtensionModule : FhModule, IFhSaveSystemImpl {
 
         bool is_ffx = FhGlobal.game_id is FhGameId.FFX;
 
-        return FhCall.SaveDataManager_debugSave_Internal_6F0650.hook(this, impl_autosave)
+        return FhCall.SaveDataManager_debugSave_Internal_6f0650.hook(this, impl_autosave)
             && FhCall.TkRefreshHdd                             .hook(this, impl_copy)
             && FhCall.SaveDataToSave                           .hook(this, signal_enter_save)
             && FhCall.SaveDataToLoad                           .hook(this, signal_enter_load)
-            && (!is_ffx || FFX.FhCall.FUN_2EFEB0.hook(this, signal_enter_albd));
+            && (!is_ffx || FFX.FhCall.FUN_002efeb0.hook(this, signal_enter_albd));
     }
 
     /* [fkelava 27/11/25 02:15]
