@@ -165,42 +165,42 @@ public unsafe class FhGui {
     public Vector2 display_size => ImGui.GetMainViewport().WorkSize;
 
     //TODO: Change these keys arrays to private and add ReadOnlySpan accessors
-    public readonly ImGuiKey[] keys_up = [
+    public ImGuiKey[] keys_up => [
         ImGuiKey.W,
         ImGuiKey.UpArrow,
         ImGuiKey.GamepadDpadUp,
         ImGuiKey.GamepadLStickUp,
     ];
 
-    public readonly ImGuiKey[] keys_down = [
+    public ImGuiKey[] keys_down => [
         ImGuiKey.S,
         ImGuiKey.DownArrow,
         ImGuiKey.GamepadDpadDown,
         ImGuiKey.GamepadLStickDown,
     ];
 
-    public readonly ImGuiKey[] keys_left = [
+    public ImGuiKey[] keys_left => [
         ImGuiKey.A,
         ImGuiKey.LeftArrow,
         ImGuiKey.GamepadDpadLeft,
         ImGuiKey.GamepadLStickLeft,
     ];
 
-    public readonly ImGuiKey[] keys_right = [
+    public ImGuiKey[] keys_right => [
         ImGuiKey.D,
         ImGuiKey.RightArrow,
         ImGuiKey.GamepadDpadRight,
         ImGuiKey.GamepadLStickRight,
     ];
 
-    public readonly ImGuiKey[] keys_confirm = [
+    public ImGuiKey[] keys_confirm => [
         ImGuiKey.Enter,
         FhGlobal.lang_id == FhLangId.Japanese
             ? ImGuiKey.GamepadFaceRight
             : ImGuiKey.GamepadFaceDown,
     ];
 
-    public readonly ImGuiKey[] keys_cancel = [
+    public ImGuiKey[] keys_cancel => [
         ImGuiKey.Escape,
         ImGuiKey.Backspace,
         FhGlobal.lang_id == FhLangId.Japanese
@@ -258,18 +258,39 @@ public unsafe class FhGui {
 
     /// <summary>Detect whether the mouse cursor is hovering over a specified rectangle.</summary>
     /// <param name="rect">The rect describing an area of the game window to detect the mouse cursor over.</param>
+    /// <param name="require_movement">
+    ///     Whether the method should return <c>false</c> if the mouse is not moving.
+    /// </param>
+    /// <param name="respect_want_capture">
+    ///     Whether the method should return <c>false</c> if something else is capturing mouse input.
+    /// </param>
     /// <returns>Whether the mouse cursor is hovering the specified rectangle.</returns>
-    public bool mouse_hovering(Rect rect) {
-        return ImGui.IsMouseHoveringRect(rect.pos, rect.pos + rect.size, false);
+    public bool mouse_hovering(
+        Rect rect,
+        bool require_movement     = false,
+        bool respect_want_capture = true
+    ) {
+        return (!respect_want_capture || !ImGui.GetIO().WantCaptureMouse)
+            && (!require_movement     || ImGui.GetIO().MouseDelta.LengthSquared() > 0)
+            && ImGui.IsMouseHoveringRect(rect.pos, rect.pos + rect.size, false);
     }
 
     /// <summary>Detect whether the user clicked on a specified rectangle.</summary>
     /// <param name="rect">The rect describing an area of the game window to detect mouse clicks on.</param>
     /// <param name="button">The button of the mouse to detect clicks of.</param>
     /// <param name="repeat">Whether the method should repeatedly return <c>true</c> for held inputs.</param>
+    /// <param name="respect_want_capture">
+    ///     Whether the method should return <c>false</c> if something else is capturing mouse input.
+    /// </param>
     /// <returns>Whether the user clicked with the button on the specified rectangle.</returns>
-    public bool mouse_clicked(Rect rect, ImGuiMouseButton button = ImGuiMouseButton.Left, bool repeat = false) {
-        return ImGui.IsMouseHoveringRect(rect.pos, rect.pos + rect.size, false)
+    public bool mouse_clicked(
+        Rect             rect,
+        ImGuiMouseButton button               = ImGuiMouseButton.Left,
+        bool             repeat               = false,
+        bool             respect_want_capture = true
+    ) {
+        return (!respect_want_capture || !ImGui.GetIO().WantCaptureMouse)
+            && ImGui.IsMouseHoveringRect(rect.pos, rect.pos + rect.size, false)
             && ImGui.IsMouseClicked(button, repeat);
     }
 
@@ -476,4 +497,239 @@ public unsafe class FhGui {
         return text_size;
     }
 
+    /// <summary>Draw a filled triangle with a gradient to the given draw list.</summary>
+    /// <param name="draw_list">The draw list to draw the triangle to.</param>
+    /// <param name="bounds">The bounding box of the desired triangle.</param>
+    /// <param name="direction">The cardinal direction the triangle should point in.</param>
+    /// <param name="color_base_l">The color of the left point of the base of the triangle.</param>
+    /// <param name="color_base_r">The color of the right point of the base of the triangle.</param>
+    /// <param name="color_peak">The color of the top point of the triangle.</param>
+    /// <seealso cref="ImGui.GetWindowDrawList()"/>
+    /// <seealso cref="ImGui.GetBackgroundDrawList()"/>
+    /// <seealso cref="ImGui.GetForegroundDrawList()"/>
+    public void draw_triangle_gradient(
+        ImDrawListPtr     draw_list,
+        Rect              bounds,
+        GradientDirection direction,
+        uint              color_base_l,
+        uint              color_base_r,
+        uint              color_peak
+    ) {
+        if (((color_base_l | color_base_r | color_peak) & 0xFF000000) == 0) {
+            return;
+        }
+
+        Vector2 uv = draw_list.Data.TexUvWhitePixel;
+
+        draw_list.PrimReserve(3, 3);
+
+        draw_list.PrimWriteIdx((ushort)(draw_list.VtxCurrentIdx + 0));
+        draw_list.PrimWriteIdx((ushort)(draw_list.VtxCurrentIdx + 1));
+        draw_list.PrimWriteIdx((ushort)(draw_list.VtxCurrentIdx + 2));
+
+        Vector2 peak = direction switch {
+            GradientDirection.UP    => bounds.top,
+            GradientDirection.RIGHT => bounds.right,
+            GradientDirection.DOWN  => bounds.bottom,
+            GradientDirection.LEFT  => bounds.left,
+
+            _ => throw new UnreachableException(),
+        };
+
+        Vector2 base_l = direction switch {
+            GradientDirection.UP    => bounds.bottom_left,
+            GradientDirection.RIGHT => bounds.top_left,
+            GradientDirection.DOWN  => bounds.top_right,
+            GradientDirection.LEFT  => bounds.bottom_right,
+
+            _ => throw new UnreachableException(),
+        };
+
+        Vector2 base_r = direction switch {
+            GradientDirection.UP    => bounds.bottom_right,
+            GradientDirection.RIGHT => bounds.bottom_left,
+            GradientDirection.DOWN  => bounds.top_left,
+            GradientDirection.LEFT  => bounds.top_right,
+
+            _ => throw new UnreachableException(),
+        };
+
+        draw_list.PrimWriteVtx(peak  , uv, color_peak);
+        draw_list.PrimWriteVtx(base_l, uv, color_base_l);
+        draw_list.PrimWriteVtx(base_r, uv, color_base_r);
+    }
+
+    private void draw_rectangle_gradient_up(
+        ImDrawListPtr      draw_list,
+        Rect               bounds,
+        ReadOnlySpan<GradientStep> steps
+    ) {
+        for (int i = 1; i < steps.Length; i++)  {
+            GradientStep step1 = steps[i - 1];
+            GradientStep step2 = steps[i];
+
+            Rect step_bounds = new() {
+                pos  = Vector2.Lerp(bounds.bottom_left, bounds.top_left, step1.progress),
+                size = bounds.size with {
+                    Y = bounds.size.Y * (step2.progress - step1.progress),
+                },
+            };
+
+            draw_list.AddRectFilledMultiColor(
+                step_bounds.top_left,
+                step_bounds.bottom_right,
+                step2.color_a,
+                step2.color_b,
+                step1.color_b,
+                step1.color_a
+            );
+        }
+    }
+
+    private void draw_rectangle_gradient_right(
+        ImDrawListPtr      draw_list,
+        Rect               bounds,
+        ReadOnlySpan<GradientStep> steps
+    ) {
+        for (int i = 1; i < steps.Length; i++)  {
+            GradientStep step1 = steps[i - 1];
+            GradientStep step2 = steps[i];
+
+            Rect step_bounds = new() {
+                pos  = Vector2.Lerp(bounds.top_left, bounds.top_right, step1.progress),
+                size = bounds.size with {
+                    X = bounds.size.X * (step2.progress - step1.progress),
+                },
+            };
+
+            draw_list.AddRectFilledMultiColor(
+                step_bounds.top_left,
+                step_bounds.bottom_right,
+                step1.color_a,
+                step2.color_a,
+                step2.color_b,
+                step1.color_b
+            );
+        }
+    }
+
+    private void draw_rectangle_gradient_down(
+        ImDrawListPtr      draw_list,
+        Rect               bounds,
+        ReadOnlySpan<GradientStep> steps
+    ) {
+        for (int i = 1; i < steps.Length; i++)  {
+            GradientStep step1 = steps[i - 1];
+            GradientStep step2 = steps[i];
+
+            Rect step_bounds = new() {
+                pos  = Vector2.Lerp(bounds.top_left, bounds.bottom_left, step1.progress),
+                size = bounds.size with {
+                    Y = bounds.size.Y * (step2.progress - step1.progress),
+                },
+            };
+
+            draw_list.AddRectFilledMultiColor(
+                step_bounds.top_left,
+                step_bounds.bottom_right,
+                step1.color_b,
+                step1.color_a,
+                step2.color_a,
+                step2.color_b
+            );
+        }
+    }
+
+    private void draw_rectangle_gradient_left(
+        ImDrawListPtr      draw_list,
+        Rect               bounds,
+        ReadOnlySpan<GradientStep> steps
+    ) {
+        for (int i = 1; i < steps.Length; i++)  {
+            GradientStep step1 = steps[i - 1];
+            GradientStep step2 = steps[i];
+
+            Rect step_bounds = new() {
+                pos  = Vector2.Lerp(bounds.top_right, bounds.top_left, step1.progress),
+                size = bounds.size with {
+                    X = bounds.size.X * (step2.progress - step1.progress),
+                },
+            };
+
+            draw_list.AddRectFilledMultiColor(
+                step_bounds.top_left,
+                step_bounds.bottom_right,
+                step2.color_b,
+                step1.color_b,
+                step1.color_a,
+                step2.color_a
+            );
+        }
+    }
+
+    public void draw_rectangle_gradient(
+        ImDrawListPtr              draw_list,
+        Rect                       bounds,
+        GradientDirection          direction,
+        ReadOnlySpan<GradientStep> steps
+    ) {
+        ArgumentOutOfRangeException.ThrowIfLessThan(steps.Length, 1);
+
+        List<GradientStep> full_steps = [ .. steps ];
+
+        if (steps[0].progress != 0f)
+            full_steps.Insert(0, steps[0] with { progress = 0f });
+
+        if (steps[^1].progress != 1f)
+            full_steps.Add(steps[^1] with { progress = 1f });
+
+        ReadOnlySpan<GradientStep> gradient_steps = CollectionsMarshal.AsSpan(full_steps);
+
+        switch (direction) {
+            case GradientDirection.UP:    draw_rectangle_gradient_up   (draw_list, bounds, gradient_steps); break;
+            case GradientDirection.RIGHT: draw_rectangle_gradient_right(draw_list, bounds, gradient_steps); break;
+            case GradientDirection.DOWN:  draw_rectangle_gradient_down (draw_list, bounds, gradient_steps); break;
+            case GradientDirection.LEFT:  draw_rectangle_gradient_left (draw_list, bounds, gradient_steps); break;
+
+            default: throw new UnreachableException();
+        }
+    }
+
+    public void draw_quad_gradient(
+        ImDrawListPtr draw_list,
+        Vector2[]     points,
+        uint[]        colors
+    ) {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(points.Length, 4);
+        ArgumentOutOfRangeException.ThrowIfNotEqual(colors.Length, 4);
+
+        // Return early if all colors are transparent
+        for (int i = 0; i < 4; i++) {
+            if ((colors[i] & 0xFF000000) != 0) break;
+            if (i == 3) return;
+        }
+
+        Vector2 uv = draw_list.Data.TexUvWhitePixel;
+
+        draw_list.PrimReserve(6, 4);
+
+        /*       0 ----- 1
+         *      /       /
+         *     /       /
+         *    /       /
+         *   2 ----- 3
+         */
+
+        draw_list.PrimWriteIdx((ushort)(draw_list.VtxCurrentIdx + 0));
+        draw_list.PrimWriteIdx((ushort)(draw_list.VtxCurrentIdx + 1));
+        draw_list.PrimWriteIdx((ushort)(draw_list.VtxCurrentIdx + 2));
+
+        draw_list.PrimWriteIdx((ushort)(draw_list.VtxCurrentIdx + 1));
+        draw_list.PrimWriteIdx((ushort)(draw_list.VtxCurrentIdx + 2));
+        draw_list.PrimWriteIdx((ushort)(draw_list.VtxCurrentIdx + 3));
+
+        for (int i = 0; i < 4; i++) {
+            draw_list.PrimWriteVtx(points[i], uv, colors[i]);
+        }
+    }
 }
