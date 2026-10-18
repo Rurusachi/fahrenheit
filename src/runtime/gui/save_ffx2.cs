@@ -104,6 +104,8 @@ public sealed class FhSaveUiX2 : FhSaveUi {
     private bool     _scrollbar_dragging;
     private Vector2? _scrollbar_held_pos;
 
+    private float _volume = FhGlobal.game_id is FhGameId.FFX ? 1f : 0.5f;
+
     // We block input when fading out, for example so you can't requests two loads of a file.
     // We block input when fading in as well, but only for a short time to make the UI feel snappy.
     private bool is_fade_blocking_input => !(_fade.is_done || (_fade.color_to == COLOR_TRANS && _fade.progress > 0.3f));
@@ -166,7 +168,9 @@ public sealed class FhSaveUiX2 : FhSaveUi {
     }
 
     private float get_move_volume() {
-        return 0.25f + (1f - _audio_fade_helper.progress) * 0.25f;
+        return FhGlobal.game_id is FhGameId.FFX
+            ? 0.5f  + (1f - _audio_fade_helper.progress) * 0.5f
+            : 0.25f + (1f - _audio_fade_helper.progress) * 0.25f;
     }
 
     private bool handle_input_list() {
@@ -179,7 +183,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
             if (FhApi.Gui.is_any_pressed(FhApi.Gui.keys_up)
              && _current_scrollable.hovered == 0
             ) {
-                FhApi.Audio.play_sound(SoundId.UI_ACTION, volume: 0.5f);
+                FhApi.Audio.play_sound(SoundId.UI_ACTION, _volume);
                 _focus = UiFocus.ACTIVE_SET;
                 return true;
             }
@@ -230,7 +234,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
 
     private bool handle_input_active_set() {
         if (_mode == UiMode.SAVE_LIST && FhApi.Gui.is_any_pressed(FhApi.Gui.keys_down) && _current_scrollable.max > 0) {
-            FhApi.Audio.play_sound(SoundId.UI_ACTION, volume: 0.5f);
+            FhApi.Audio.play_sound(SoundId.UI_ACTION, _volume);
 
             _focus = UiFocus.LIST;
             _current_scrollable.hovered = _current_scrollable.current;
@@ -657,7 +661,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
         text_pos.X += 241f * aspect_scale.X;
         text_pos.Y -=   7f * aspect_scale.Y;
 
-        float font_size = 40f * font_scale;
+        float font_size = 43f * font_scale;
 
         FhApi.Gui.draw_text(
             draw,
@@ -684,7 +688,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
         Vector2 text_pos = new(1717f, 146f);
 
         float line_height = 34f;
-        float font_size   = 34f * font_scale;
+        float font_size   = 37f * font_scale;
 
         ImDrawListPtr draw = ImGui.GetBackgroundDrawList();
 
@@ -843,7 +847,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
         UV bg_suv = bg_screen.as_uv();
 
         if (mouse_hovered(bg_screen) && _focus != UiFocus.ACTIVE_SET) {
-            FhApi.Audio.play_sound(SoundId.UI_ACTION, volume: 0.5f);
+            FhApi.Audio.play_sound(SoundId.UI_ACTION, _volume);
             _focus = UiFocus.ACTIVE_SET;
         }
 
@@ -889,7 +893,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
             accent_tuv.p1
         );
 
-        float   font_size =  40f * font_scale;
+        float   font_size =  43f * font_scale;
         Vector2 text_pos  =  bg_screen.center;
         text_pos.Y        -= 2f * aspect_scale.Y;
 
@@ -962,11 +966,11 @@ public sealed class FhSaveUiX2 : FhSaveUi {
         ImDrawListPtr draw = ImGui.GetBackgroundDrawList();
         ImGuiIOPtr    io   = ImGui.GetIO();
 
-        float font_size = 40f * font_scale;
+        float font_size = 43f * font_scale;
 
         if (mouse_hovered(button_scaled)) {
             if (_focus != UiFocus.LIST || _scrollable_sets.hovered != set_idx) {
-                FhApi.Audio.play_sound(SoundId.UI_ACTION, volume: 0.5f);
+                FhApi.Audio.play_sound(SoundId.UI_ACTION, _volume);
             }
 
             _focus = UiFocus.LIST;
@@ -1105,7 +1109,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
 
         ImDrawListPtr draw = ImGui.GetBackgroundDrawList();
 
-        float font_size = 40f * font_scale;
+        float font_size = 43f * font_scale;
 
         ImGui.PushFont(null, font_size);
         Vector2 text_size = ImGui.CalcTextSize(message);
@@ -1190,7 +1194,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
         // We set the hovered state early to potentially use it later.
         if (mouse_hovered(save_rect.scale_to_aspect(aspect_helper))) {
             if (_focus != UiFocus.LIST || _scrollable_saves.hovered != index) {
-                FhApi.Audio.play_sound(SoundId.UI_ACTION, volume: 0.5f);
+                FhApi.Audio.play_sound(SoundId.UI_ACTION, _volume);
             }
 
             _focus = UiFocus.LIST;
@@ -1335,11 +1339,11 @@ public sealed class FhSaveUiX2 : FhSaveUi {
         Span<UV> face_tuvs = stackalloc UV[8];
 
         for (int i = 0; i < 8; i++) {
-            float x1 = 200f * (i % 4);
-            float x2 = x1 + 200f;
+            float x1 = (200f * (i % 4)) + 1f;
+            float x2 = x1 + 199f;
 
-            float y1 = i > 3 ? 312f : 512f;
-            float y2 = y1 - 200f;
+            float y1 = (i > 3 ? 312f : 512f) + 1f;
+            float y2 = y1 - 199f;
 
             face_tuvs[i] = new UV(
                 new(x1, y1),
@@ -1410,7 +1414,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
             header_size / 2
         );
 
-        float font_size = 40f * font_scale;
+        float font_size = 43f * font_scale;
 
         //TODO: Add localization
         string slot_text   = save.slot == 0 ? "Autosave" : save.slot_str;
@@ -1586,7 +1590,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
             header_size / 2
         );
 
-        float font_size = 40f * font_scale;
+        float font_size = 43f * font_scale;
 
         //TODO: Add localization
         string slot_text   = save.slot == 0 ? "Autosave" : save.slot_str;
@@ -1803,7 +1807,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
             header_size / 2
         );
 
-        float font_size = 40f * font_scale;
+        float font_size = 43f * font_scale;
 
         //TODO: Add localization
         string slot_text   = save.slot == 0 ? "Autosave" : save.slot_str;
@@ -1932,7 +1936,7 @@ public sealed class FhSaveUiX2 : FhSaveUi {
             header_height + (save_rect.size.Y - header_height) / 2f + 1f
         );
 
-        float font_size = 40f * font_scale;
+        float font_size = 43f * font_scale;
 
         FhApi.Gui.draw_text(
             draw,
@@ -1991,12 +1995,25 @@ public sealed class FhSaveUiX2 : FhSaveUi {
         uint track_color = 0xFF000000;
 
         Vector2 thumb_margin = new(2f);
-        Vector2 thumb_size   = new(13f, 60f);
+
+        float scrollable_height  = track.size.Y - thumb_margin.Y * 2;
+        float visible_percentage = _current_scrollable.visible / (float)_current_scrollable.max;
+
+        float thumb_height_max = 0.8f * scrollable_height;
+        float thumb_height_min = float.Min(20f, thumb_height_max);
+
+        float thumb_height = float.Lerp(
+            thumb_height_min,
+            thumb_height_max,
+            visible_percentage
+        );
+
+        Vector2 thumb_size = new(13f, thumb_height);
 
         uint thumb_color_top    = 0xFFCCCCCC;
-        uint thumb_color_bottom = 0xFF818181;
+        uint thumb_color_bottom = 0xFF808080;
 
-        Vector2 triangle_size = new(35f, 17f);
+        Vector2 triangle_size = new(38f, 19f);
         float   triangle_gap  = 13f;
 
         Rect triangle_top = new() {
@@ -2015,9 +2032,8 @@ public sealed class FhSaveUiX2 : FhSaveUi {
             size = triangle_size,
         };
 
-        // In the vanilla game, the triangles are a linear gradient
-        // #c0c0c3 at the tip to #838383 at the base.
-        uint triangle_color = 0xFFA0A0A0;
+        uint triangle_color_top    = 0xFFC0C0C0;
+        uint triangle_color_bottom = 0xFF808080;
 
         ImDrawListPtr draw = ImGui.GetBackgroundDrawList();
 
@@ -2057,19 +2073,50 @@ public sealed class FhSaveUiX2 : FhSaveUi {
             thumb_color_bottom
         );
 
-        // TODO: Make these use FhApi.Gui.draw_triangle_filled_multi_color
-        draw.AddTriangleFilled(
-            triangle_top.top,
-            triangle_top.bottom_left,
-            triangle_top.bottom_right,
-            triangle_color
+        Rect triangle_top_outline_bounds = triangle_top.expand(
+            Vector2.Round(new Vector2(2f, 1f) * new Vector2(1f) * aspect_scale) * 2f,
+            new(Alignment.CENTER, Alignment.CENTER)
         );
 
-        draw.AddTriangleFilled(
-            triangle_bottom.bottom,
-            triangle_bottom.top_left,
-            triangle_bottom.top_right,
-            triangle_color
+        Rect triangle_bot_outline_bounds = triangle_bottom.expand(
+            Vector2.Round(new Vector2(2f, 1f) * new Vector2(1f) * aspect_scale) * 2f,
+            new(Alignment.CENTER, Alignment.CENTER)
+        );
+
+        FhApi.Gui.draw_triangle_gradient(
+            draw,
+            triangle_top_outline_bounds,
+            GradientDirection.UP,
+            0xFF000000,
+            0xFF000000,
+            0xFF000000
+        );
+
+        FhApi.Gui.draw_triangle_gradient(
+            draw,
+            triangle_bot_outline_bounds,
+            GradientDirection.DOWN,
+            0xFF000000,
+            0xFF000000,
+            0xFF000000
+        );
+
+        FhApi.Gui.draw_triangle_gradient(
+            draw,
+            triangle_top,
+            GradientDirection.UP,
+            triangle_color_bottom,
+            triangle_color_bottom,
+            triangle_color_top
+        );
+
+        FhApi.Gui.draw_triangle_gradient(
+            draw,
+            triangle_bottom,
+            GradientDirection.DOWN,
+            triangle_color_bottom,
+            triangle_color_bottom,
+            triangle_color_top
         );
 
         // Handle input
